@@ -2,53 +2,75 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Counter App</title>
-
+    <title>AI Games V</title>
     <style>
         body {
-            background-color: #f0f0f0;
-            text-align: center;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
             font-family: Arial, sans-serif;
-            margin-top: 100px;
         }
 
-        #counter {
-            font-size: 48px;
-            margin: 20px;
+        h1 {
+            margin: 40px 0 20px;
+            font-size: 3rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
 
-        button {
-            padding: 10px 20px;
-            font-size: 18px;
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
             cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
+            text-decoration: none;
+            color: #fff;
         }
 
-        button:hover {
-            background-color: #45a049;
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .game-card h3 {
+            margin: 0 0 10px;
+            font-size: 1.5rem;
+        }
+
+        .game-card p {
+            margin: 0;
+            font-size: 0.9rem;
+            opacity: 0.8;
         }
     </style>
 </head>
-
 <body>
-
-    <h1>Counter App</h1>
-
-    <div id="counter">0</div>
-
-    <button onclick="incrementCounter()">Increment</button>
-
-    <script>
-        let count = 0;
-
-        function incrementCounter() {
-            count++;
-            document.getElementById("counter").textContent = count;
-        }
-    </script>
-
+    <h1>AI Games V</h1>
+    <div class="games-grid">
+        <a href="pacman.html" class="game-card">
+            <h3>Pac-Man</h3>
+            <p>Eat pellets and avoid ghosts in this classic arcade game!</p>
+        </a>
+        <a href="horse-race.html" class="game-card">
+            <h3>Horse Race</h3>
+            <p>Name your horses, set the race time, and watch them compete with stamina!</p>
+        </a>
+        <!-- Add more games here -->
+    </div>
 </body>
 </html>

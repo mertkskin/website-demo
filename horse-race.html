@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Horse Race Game</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            background: linear-gradient(135deg, #8e44ad 0%, #3498db 100%);
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            margin: 20px 0;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .setup {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .horse-inputs {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .horse-inputs input {
+            padding: 5px;
+            border: none;
+            border-radius: 5px;
+            width: 120px;
+        }
+
+        .timer-input {
+            margin: 10px 0;
+        }
+
+        .timer-input input {
+            padding: 5px;
+            border: none;
+            border-radius: 5px;
+            width: 60px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #ffcc00;
+            color: #111;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #ffd847;
+        }
+
+        canvas {
+            border: 4px solid #222;
+            background: #2ecc71;
+            display: block;
+            margin-top: 20px;
+        }
+
+        .results {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .results h2 {
+            margin-bottom: 10px;
+        }
+
+        .results ol {
+            text-align: left;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Horse Race Game</h1>
+    <div class="setup" id="setup">
+        <h2>Set Up Your Race</h2>
+        <div class="horse-inputs">
+            <input type="text" id="horse1" placeholder="Horse 1 Name" value="Thunder">
+            <input type="text" id="horse2" placeholder="Horse 2 Name" value="Lightning">
+            <input type="text" id="horse3" placeholder="Horse 3 Name" value="Storm">
+            <input type="text" id="horse4" placeholder="Horse 4 Name" value="Blaze">
+            <input type="text" id="horse5" placeholder="Horse 5 Name" value="Phoenix">
+            <input type="text" id="horse6" placeholder="Horse 6 Name" value="Dragon">
+        </div>
+        <div class="timer-input">
+            <label for="raceTime">Race Time (seconds):</label>
+            <input type="number" id="raceTime" min="10" max="300" value="60">
+        </div>
+        <button id="startRace">Start Race</button>
+    </div>
+    <canvas id="raceTrack" width="850" height="400" style="display: none;"></canvas>
+    <div class="results" id="results" style="display: none;">
+        <h2>Race Results</h2>
+        <ol id="standings"></ol>
+        <button id="newRace">New Race</button>
+    </div>
+
+    <script src="horse-race.js"></script>
+</body>
+</html>

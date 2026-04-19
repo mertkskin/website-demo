@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Basic Pac-Man</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            background: radial-gradient(circle at top, #111 0%, #000 45%);
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            margin: 24px 0 8px;
+            font-size: 2rem;
+        }
+
+        p {
+            margin: 4px 0 16px;
+            max-width: 640px;
+            text-align: center;
+            line-height: 1.5;
+            color: #ddd;
+        }
+
+        canvas {
+            border: 6px solid #222;
+            background: #000;
+            display: block;
+        }
+
+        button {
+            margin: 20px 0 36px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: #ffcc00;
+            color: #111;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #ffd847;
+        }
+    </style>
+</head>
+<body>
+    <h1>Basic Pac-Man</h1>
+    <p>Use the arrow keys to move Pac-Man. Eat all pellets and avoid the ghost. Press restart to play again.</p>
+    <canvas id="game" width="420" height="420" style="display: none;"></canvas>
+    <button id="playPacman" style="margin: 40px 0;">Play Pac-Man</button>
+    <button id="restart" style="display: none;">Restart Game</button>
+
+    <script src="pacman.js"></script>
+</body>
+</html>
