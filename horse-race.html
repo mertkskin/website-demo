@@ -121,11 +121,6 @@
 <div id="setup">
   <h2>Set Up Race</h2>
   <div class="horse-grid" id="horseGrid"></div>
-  <div class="timer-row">
-    <label for="raceTime">Race duration:</label>
-    <input type="number" id="raceTime" min="10" max="300" value="60">
-    <span>seconds</span>
-  </div>
   <button class="btn" id="btnStart">🚀 Start Race</button>
 </div>
 
@@ -222,8 +217,8 @@ const canvas = document.getElementById('raceTrack');
 const ctx    = canvas.getContext('2d');
 
 // ── STATE ─────────────────────────────────────────────────────────────────
-let horses=[], raceInterval=null, timerInterval=null;
-let timeLeft=60, elapsedMs=0, finishReveal=0;
+let horses=[], raceInterval=null;
+let elapsedMs=0, maxDistance=0;
 let showFinish=false, raceEnded=false, bgScroll=0, animTick=0;
 
 // ── HORSE CLASS ───────────────────────────────────────────────────────────
@@ -248,23 +243,41 @@ class Horse {
 
   update() {
     if (this.finished) return;
-    const sp = this.stamina / 100;
-    if (sp > 0.6) {
-      this.speed = (Math.random() * 1.8 + 0.4) * this.baseSpeed;
-    } else if (sp > 0.3) {
-      const bias = (sp - 0.3) / 0.3;
-      this.speed = (Math.random() - (1 - bias) * 0.55) * 2.2 * this.baseSpeed;
-    } else {
-      this.speed = -(Math.random() * 1.0 + 0.2) * this.baseSpeed;
+    
+    const staminaPercent = this.stamina / 100;
+    
+    // High stamina: gallop forward
+    if (staminaPercent > 0.65) {
+      this.speed = (Math.random() * 2.0 + 0.5) * this.baseSpeed;
+    } 
+    // Medium stamina: uncertain movement
+    else if (staminaPercent > 0.35) {
+      const stability = (staminaPercent - 0.35) / 0.3;
+      this.speed = (Math.random() * 2.5 - 1.25 * (1 - stability)) * this.baseSpeed;
+    } 
+    // Low stamina: tired, moving backward
+    else {
+      this.speed = -(Math.random() * 1.5 + 0.3) * this.baseSpeed;
     }
+    
     this.x += this.speed;
-    this.x = Math.max(START_X, this.x);
+    
+    // Allow horses to move backward or forward freely (no clamping)
+    this.x = Math.max(10, Math.min(CANVAS_W - 30, this.x));
+    
     this.stamina -= this.staminaDrain;
     if (this.stamina < 0) this.stamina = 0;
+    
     this.frameTick++;
-    if (this.frameTick >= 3) { this.frame = (this.frame + 1) % ANIM_FRAMES; this.frameTick = 0; }
+    if (this.frameTick >= 3) { 
+      this.frame = (this.frame + 1) % ANIM_FRAMES; 
+      this.frameTick = 0; 
+    }
+    
+    // Check finish only if finish line is shown
     if (showFinish && this.x >= FINISH_X && !this.finished) {
-      this.finished = true; this.finishMs = elapsedMs;
+      this.finished = true; 
+      this.finishMs = elapsedMs;
     }
   }
 
@@ -383,62 +396,50 @@ function drawTrack() {
   ctx.fillStyle='rgba(0,0,0,0.5)';
   ctx.beginPath(); ctx.roundRect(8,6,120,28,6); ctx.fill();
   ctx.fillStyle='#f5c842'; ctx.font='bold 16px Teko,sans-serif'; ctx.textAlign='left';
-  ctx.fillText(`TIME: ${timeLeft}s`,16,24);
+  ctx.fillText(`TIME: ${(elapsedMs/1000).toFixed(1)}s`,16,24);
 }
 
 // ── RACE LOGIC ────────────────────────────────────────────────────────────
 function tick(){
   if(raceEnded) return;
   animTick++;
-  const active=horses.filter(h=>!h.finished);
-  if(active.length>0){
-    const avg=active.reduce((s,h)=>s+h.speed,0)/active.length;
-    bgScroll+=Math.max(0,Math.min(6,avg*1.2));
-  }
-  elapsedMs+=50;
-  horses.forEach(h=>h.update());
+  
+  elapsedMs += 50;
+  
+  const active = horses.filter(h => !h.finished);
+  
+  horses.forEach(h => h.update());
   drawTrack();
-  if(horses.every(h=>h.finished)||timeLeft<=0) endRace();
+  if(horses.every(h => h.finished)) endRace();
 }
 
 function startRace(){
-  const raw=parseInt(document.getElementById('raceTime').value,10);
-  timeLeft    =isNaN(raw)||raw<10?60:Math.min(raw,300);
-  finishReveal=Math.max(8,Math.floor(Math.min(timeLeft*0.25,timeLeft/2)));
-  showFinish=false; raceEnded=false; elapsedMs=0; bgScroll=0; animTick=0;
+  showFinish = true;
+  raceEnded = false;
+  elapsedMs = 0;
+  bgScroll = 0;
+  animTick = 0;
 
-  horses=[];
-  for(let i=0;i<NUM_HORSES;i++){
-    const name=document.getElementById(`horse${i+1}`).value.trim()||DEFAULT_NAMES[i];
-    horses.push(new Horse(i,name));
+  horses = [];
+  for(let i = 0; i < NUM_HORSES; i++){
+    const name = document.getElementById(`horse${i+1}`).value.trim() || DEFAULT_NAMES[i];
+    horses.push(new Horse(i, name));
   }
 
-  document.getElementById('setup').style.display='none';
+  document.getElementById('setup').style.display = 'none';
   document.getElementById('raceArea').classList.add('active');
   document.getElementById('results').classList.remove('active');
-  document.getElementById('results').style.display='none';
-  document.getElementById('hudTime').textContent=timeLeft;
-  document.getElementById('hudMsg').textContent='Racing…';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('hudMsg').textContent = 'Racing...';
 
   drawTrack();
-
-  timerInterval=setInterval(()=>{
-    timeLeft=Math.max(0,timeLeft-1);
-    document.getElementById('hudTime').textContent=timeLeft;
-    if(timeLeft<=finishReveal&&!showFinish){
-      showFinish=true;
-      document.getElementById('hudMsg').textContent='🏁 Finish line revealed!';
-    }
-    if(timeLeft<=0){ clearInterval(timerInterval); if(!raceEnded) endRace(); }
-  },1000);
-
-  raceInterval=setInterval(tick,50);
+  raceInterval = setInterval(tick, 50);
 }
 
 function endRace(){
   if(raceEnded) return;
-  raceEnded=true;
-  clearInterval(raceInterval); clearInterval(timerInterval);
+  raceEnded = true;
+  clearInterval(raceInterval);
 
   horses.sort((a,b)=>{
     if(a.finished&&b.finished) return a.finishMs-b.finishMs;
