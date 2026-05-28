@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Map Generator</title>
+    <link rel="stylesheet" href="map-generator.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ 2D Procedural Map Generator</h1>
+
+        <div class="controls">
+            <div class="control-group">
+                <input 
+                    type="number" 
+                    id="seed-input" 
+                    placeholder="Enter seed number"
+                    value="12345"
+                >
+                <button id="generate-btn">Generate from Seed</button>
+                <button id="random-btn">Random Seed</button>
+            </div>
+            <div class="control-group">
+                <select id="size-select">
+                    <option value="100">100x100 (Small)</option>
+                    <option value="150">150x150 (Medium)</option>
+                    <option value="200">200x200 (Large)</option>
+                    <option value="250">250x250 (XL)</option>
+                    <option value="300">300x300 (XXL)</option>
+                    <option value="custom">Custom Size...</option>
+                </select>
+                <input 
+                    type="number" 
+                    id="custom-size-input" 
+                    placeholder="Enter custom size (e.g., 180)"
+                    style="display: none;"
+                    min="50"
+                    max="500"
+                >
+                <button id="size-btn">Set Map Size</button>
+            </div>
+        </div>
+
+        <div class="info">
+            <div class="info-item">
+                <strong>Position:</strong> <span id="player-pos">X: 50, Y: 50</span>
+            </div>
+            <div class="info-item">
+                <strong>Biome:</strong> <span id="current-biome">Grass</span>
+            </div>
+            <div class="info-item">
+                <strong>Seed:</strong> <span id="current-seed">0</span>
+            </div>
+            <div class="info-item">
+                <strong>Noise Value:</strong> <span id="noise-value">0.000</span>
+            </div>
+            <div class="info-item">
+                <strong>Zoom:</strong> <span id="zoom-level">100%</span>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div class="map" id="map"></div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color water"></div>
+                <span>Water</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color sand"></div>
+                <span>Sand</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color grass"></div>
+                <span>Grass</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color forest"></div>
+                <span>Forest</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color mountain"></div>
+                <span>Mountain</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color snow"></div>
+                <span>Snow</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color player"></div>
+                <span>Player</span>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <strong>How to Play:</strong>
+            <p>🎮 Use Arrow Keys or WASD to move your character around the map</p>
+            <p>🌱 Different biomes appear based on the procedurally generated terrain</p>
+            <p>🔢 Enter a seed number to generate a specific map (same seed = same map)</p>
+            <p>🎲 Click "Random Seed" to generate a completely new map</p>
+            <p>✨ Smooth transitions between biomes create natural-looking terrain</p>
+            <p>🔍 Use Mouse Wheel to zoom in/out on the map for better visibility</p>
+        </div>
+    </div>
+
+    <script src="perlin-noise.js"></script>
+    <script src="map-generator.js"></script>
+</body>
+</html>
