@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biome Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:        #0d0e0b;
+      --surface:   #141610;
+      --panel:     #1a1c16;
+      --border:    #2e3228;
+      --text:      #c8c4a8;
+      --text-dim:  #6b6a56;
+      --accent:    #b8973e;
+      --accent2:   #7a9e5a;
+      --glow:      rgba(184,151,62,0.15);
+
+      /* Biome colors */
+      --deep-water:  #0f2a4a;
+      --water:       #1a4d82;
+      --shallow:     #2a7ab5;
+      --beach:       #c9b46a;
+      --scrub:       #8fa654;
+      --grass:       #4d8a3e;
+      --forest:      #2a5e28;
+      --dense-forest:#1a3d18;
+      --highland:    #8b7b6a;
+      --mountain:    #6b6259;
+      --peak:        #9a9490;
+      --snow:        #dcdad4;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Crimson Text', Georgia, serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 3rem;
+    }
+
+    /* Parchment texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(184,151,62,0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(122,158,90,0.04) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      padding: 1rem 0 0.5rem;
+    }
+
+    header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      line-height: 1.1;
+      text-shadow: 0 0 40px rgba(184,151,62,0.3);
+    }
+
+    header p {
+      font-size: 1rem;
+      color: var(--text-dim);
+      font-style: italic;
+      margin-top: 0.4rem;
+      letter-spacing: 0.04em;
+    }
+
+    /* Decorative rule */
+    .rule {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 600px;
+    }
+    .rule::before, .rule::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+    .rule-gem {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      transform: rotate(45deg);
+      opacity: 0.6;
+    }
+
+    /* Controls panel */
+    .controls {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.25rem 1.5rem;
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-end;
+    }
+
+    .ctrl-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    input[type="number"], select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Crimson Text', serif;
+      font-size: 1rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: 2px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="number"]:focus, select:focus {
+      border-color: var(--accent);
+    }
+    select option { background: #1a1c16; }
+
+    .btn {
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.55rem 1.2rem;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.2s;
+      white-space: nowrap;
+      align-self: flex-end;
+    }
+    .btn:hover { background: var(--glow); }
+    .btn.primary {
+      background: var(--accent);
+      color: #0d0e0b;
+    }
+    .btn.primary:hover { background: #cda849; }
+
+    /* Stats bar */
+    .stats {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 0.4rem 0.8rem;
+      flex: 1;
+      min-width: 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .stat-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+    .stat-value {
+      font-size: 1rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Map canvas wrapper */
+    .map-wrap {
+      position: relative;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      background: var(--deep-water);
+      /* Cartographic frame */
+      box-shadow:
+        0 0 0 4px var(--panel),
+        0 0 0 5px var(--border),
+        0 0 40px rgba(0,0,0,0.6);
+    }
+
+    /* Corner ornaments */
+    .map-wrap::before, .map-wrap::after {
+      content: '✦';
+      position: absolute;
+      font-size: 1rem;
+      color: var(--accent);
+      opacity: 0.5;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .map-wrap::before { top: 8px; left: 12px; }
+    .map-wrap::after  { bottom: 8px; right: 12px; }
+
+    canvas {
+      display: block;
+      width: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* Player cursor overlay */
+    #player-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* Legend */
+    .legend {
+      width: 100%;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem 1.2rem;
+      align-items: center;
+    }
+    .legend-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      width: 100%;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+    }
+    .legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+      border: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+
+    /* Instructions */
+    .instructions {
+      font-style: italic;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+
+    /* Loading spinner */
+    #loading {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(13,14,11,0.8);
+      z-index: 20;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-size: 0.9rem;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+    }
+    #loading.show { display: flex; }
+
+    @media (max-width: 600px) {
+      .ctrl-group { min-width: 100%; }
+      .btn { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Biome Generator</h1>
+    <p>Procedural worlds from Perlin noise &amp; fractional Brownian motion</p>
+  </header>
+
+  <div class="rule"><div class="rule-gem"></div></div>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>Seed</label>
+      <input type="number" id="seed-input" value="42">
+    </div>
+    <div class="ctrl-group">
+      <label>Map size</label>
+      <select id="size-select">
+        <option value="100">100 × 100</option>
+        <option value="150">150 × 150</option>
+        <option value="200" selected>200 × 200</option>
+        <option value="256">256 × 256</option>
+        <option value="300">300 × 300</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Biome style</label>
+      <select id="style-select">
+        <option value="terrain">Terrain (default)</option>
+        <option value="tropical">Tropical</option>
+        <option value="arctic">Arctic</option>
+        <option value="volcanic">Volcanic</option>
+        <option value="alien">Alien world</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Scale</label>
+      <select id="scale-select">
+        <option value="0.05">Vast (continent)</option>
+        <option value="0.08" selected>Large (region)</option>
+        <option value="0.12">Medium (local)</option>
+        <option value="0.18">Fine (detailed)</option>
+      </select>
+    </div>
+    <button class="btn primary" id="generate-btn">Generate</button>
+    <button class="btn" id="random-btn">Random</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-label">Seed</span>
+      <span class="stat-value" id="stat-seed">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Position</span>
+      <span class="stat-value" id="stat-pos">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Biome</span>
+      <span class="stat-value" id="stat-biome">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Elevation</span>
+      <span class="stat-value" id="stat-elev">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Zoom</span>
+      <span class="stat-value" id="stat-zoom">100%</span>
+    </div>
+  </div>
+
+  <div class="map-wrap" id="map-wrap">
+    <canvas id="map-canvas"></canvas>
+    <svg id="player-overlay" viewBox="0 0 200 200" preserveAspectRatio="none"></svg>
+    <div id="loading">Charting territory…</div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-title">Terrain legend</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#0f2a4a"></div>Deep water</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#1a4d82"></div>Water</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#2a7ab5"></div>Shallows</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#c9b46a"></div>Beach</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#8fa654"></div>Scrubland</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#4d8a3e"></div>Grassland</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#2a5e28"></div>Forest</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#1a3d18"></div>Dense forest</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#8b7b6a"></div>Highland</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#6b6259"></div>Mountain</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#9a9490"></div>Rocky peak</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#dcdad4"></div>Snow</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#ff4444; border-color:rgba(255,80,80,0.5)"></div>Explorer</div>
+  </div>
+
+  <p class="instructions">Arrow keys or WASD to move · Scroll to zoom · Click map to teleport</p>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   Seeded Perlin Noise (Improved Ken Perlin)
+═══════════════════════════════════════════════ */
+class PerlinNoise {
+  constructor(seed = 0) {
+    this.perm = this._buildPerm(seed);
+  }
+  _seededRng(s) {
+    return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  }
+  _buildPerm(seed) {
+    const p = Array.from({length:256}, (_,i)=>i);
+    const rng = this._seededRng(seed);
+    for (let i = 255; i > 0; i--) {
+      const j = Math.floor(rng() * (i+1));
+      [p[i], p[j]] = [p[j], p[i]];
+    }
+    return [...p, ...p];
+  }
+  _fade(t) { return t*t*t*(t*(t*6-15)+10); }
+  _lerp(t,a,b) { return a + t*(b-a); }
+  _grad(h, x, y) {
+    const H = h & 15;
+    const u = H < 8 ? x : y;
+    const v = H < 8 ? y : x;
+    return ((H&1)===0?u:-u) + ((H&2)===0?v:-v);
+  }
+  noise(x, y) {
+    const xi = Math.floor(x)&255, yi = Math.floor(y)&255;
+    const xf = x-Math.floor(x), yf = y-Math.floor(y);
+    const u = this._fade(xf), v = this._fade(yf);
+    const aa = this.perm[this.perm[xi]+yi];
+    const ab = this.perm[this.perm[xi]+yi+1];
+    const ba = this.perm[this.perm[xi+1]+yi];
+    const bb = this.perm[this.perm[xi+1]+yi+1];
+    return (this._lerp(v,
+      this._lerp(u, this._grad(aa,xf,yf),   this._grad(ba,xf-1,yf)),
+      this._lerp(u, this._grad(ab,xf,yf-1), this._grad(bb,xf-1,yf-1))
+    ) + 1) / 2;
+  }
+  fbm(x, y, oct=6, persist=0.5, lac=2.0) {
+    let val=0, amp=1, freq=1, max=0;
+    for (let i=0;i<oct;i++) {
+      val += this.noise(x*freq, y*freq)*amp;
+      max += amp; amp *= persist; freq *= lac;
+    }
+    return val/max;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   Biome Palettes
+═══════════════════════════════════════════════ */
+const PALETTES = {
+  terrain: [
+    {thresh:0.20, name:'Deep water',   rgb:[15,42,74]},
+    {thresh:0.30, name:'Water',        rgb:[26,77,130]},
+    {thresh:0.38, name:'Shallows',     rgb:[42,122,181]},
+    {thresh:0.42, name:'Beach',        rgb:[201,180,106]},
+    {thresh:0.50, name:'Scrubland',    rgb:[143,166,84]},
+    {thresh:0.60, name:'Grassland',    rgb:[77,138,62]},
+    {thresh:0.70, name:'Forest',       rgb:[42,94,40]},
+    {thresh:0.76, name:'Dense forest', rgb:[26,61,24]},
+    {thresh:0.82, name:'Highland',     rgb:[139,123,106]},
+    {thresh:0.89, name:'Mountain',     rgb:[107,98,89]},
+    {thresh:0.94, name:'Rocky peak',   rgb:[154,148,144]},
+    {thresh:1.01, name:'Snow',         rgb:[220,218,212]},
+  ],
+  tropical: [
+    {thresh:0.22, name:'Deep ocean',   rgb:[8,30,70]},
+    {thresh:0.32, name:'Ocean',        rgb:[14,80,140]},
+    {thresh:0.38, name:'Lagoon',       rgb:[30,160,180]},
+    {thresh:0.43, name:'White sand',   rgb:[230,215,170]},
+    {thresh:0.52, name:'Palm scrub',   rgb:[160,190,70]},
+    {thresh:0.64, name:'Jungle',       rgb:[30,110,40]},
+    {thresh:0.74, name:'Dense jungle', rgb:[10,70,20]},
+    {thresh:0.80, name:'Cloud forest', rgb:[50,100,60]},
+    {thresh:0.86, name:'Ridge',        rgb:[120,100,80]},
+    {thresh:0.92, name:'Volcano rock', rgb:[80,60,50]},
+    {thresh:0.96, name:'Ash peak',     rgb:[100,90,90]},
+    {thresh:1.01, name:'Crater snow',  rgb:[240,235,230]},
+  ],
+  arctic: [
+    {thresh:0.18, name:'Frozen sea',   rgb:[20,40,80]},
+    {thresh:0.28, name:'Pack ice sea', rgb:[80,120,160]},
+    {thresh:0.35, name:'Slush ice',    rgb:[160,185,200]},
+    {thresh:0.42, name:'Ice shelf',    rgb:[200,215,225]},
+    {thresh:0.52, name:'Tundra',       rgb:[130,140,110]},
+    {thresh:0.62, name:'Boreal',       rgb:[60,80,50]},
+    {thresh:0.72, name:'Taiga',        rgb:[40,60,35]},
+    {thresh:0.78, name:'Lichen rock',  rgb:[110,100,80]},
+    {thresh:0.84, name:'Glacier',      rgb:[180,210,230]},
+    {thresh:0.90, name:'Ice mountain', rgb:[210,225,235]},
+    {thresh:0.95, name:'Blizzard peak',rgb:[230,235,240]},
+    {thresh:1.01, name:'Eternal ice',  rgb:[245,248,252]},
+  ],
+  volcanic: [
+    {thresh:0.20, name:'Lava sea',     rgb:[180,30,10]},
+    {thresh:0.30, name:'Magma flow',   rgb:[210,80,20]},
+    {thresh:0.38, name:'Cooled lava',  rgb:[80,50,40]},
+    {thresh:0.44, name:'Ash plain',    rgb:[110,100,90]},
+    {thresh:0.52, name:'Sulfur flat',  rgb:[160,150,50]},
+    {thresh:0.62, name:'Scorched',     rgb:[70,60,40]},
+    {thresh:0.70, name:'Obsidian',     rgb:[30,25,30]},
+    {thresh:0.76, name:'Dark basalt',  rgb:[50,45,50]},
+    {thresh:0.83, name:'Lava tube',    rgb:[120,40,20]},
+    {thresh:0.89, name:'Cinder cone',  rgb:[90,70,60]},
+    {thresh:0.94, name:'Summit rock',  rgb:[140,120,110]},
+    {thresh:1.01, name:'Ash crown',    rgb:[200,190,180]},
+  ],
+  alien: [
+    {thresh:0.20, name:'Void sea',     rgb:[10,0,30]},
+    {thresh:0.30, name:'Acid ocean',   rgb:[20,80,40]},
+    {thresh:0.37, name:'Brine shallows',rgb:[60,160,80]},
+    {thresh:0.43, name:'Crystal sand', rgb:[180,150,200]},
+    {thresh:0.52, name:'Spore plain',  rgb:[120,60,140]},
+    {thresh:0.62, name:'Xenograss',    rgb:[60,140,70]},
+    {thresh:0.70, name:'Fungal forest',rgb:[140,40,100]},
+    {thresh:0.76, name:'Toxic grove',  rgb:[80,20,80]},
+    {thresh:0.83, name:'Crystal ridge',rgb:[100,80,160]},
+    {thresh:0.89, name:'Mineral spire',rgb:[80,60,120]},
+    {thresh:0.94, name:'Void peak',    rgb:[20,10,40]},
+    {thresh:1.01, name:'Star dust',    rgb:[230,220,255]},
+  ],
+};
+
+/* ═══════════════════════════════════════════════
+   Map data (in-memory heightmap)
+═══════════════════════════════════════════════ */
+let heightMap = null;
+let mapSize   = 200;
+let currentSeed = 42;
+let currentScale = 0.08;
+let currentStyle = 'terrain';
+let playerX = 100, playerY = 100;
+let zoomLevel = 1.0;
+
+function generateHeightMap(size, seed, scale) {
+  const pn = new PerlinNoise(seed);
+  const h  = new Float32Array(size * size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      // FBM with 6 octaves for detail
+      let v = pn.fbm(x * scale, y * scale, 6, 0.5, 2.0);
+      // Island mask: fade edges toward water
+      const nx = (x / size) * 2 - 1;
+      const ny = (y / size) * 2 - 1;
+      const dist = Math.sqrt(nx*nx + ny*ny);
+      const mask = Math.max(0, 1 - dist * 1.2);
+      // Power curve for island shape
+      v = v * 0.7 + mask * 0.3;
+      h[y * size + x] = Math.max(0, Math.min(1, v));
+    }
+  }
+  return h;
+}
+
+function getBiomeAt(hv, palette) {
+  for (const b of palette) {
+    if (hv < b.thresh) return b;
+  }
+  return palette[palette.length - 1];
+}
+
+function lerpRgb(a, b, t) {
+  return [
+    Math.round(a[0] + (b[0]-a[0])*t),
+    Math.round(a[1] + (b[1]-a[1])*t),
+    Math.round(a[2] + (b[2]-a[2])*t),
+  ];
+}
+
+/* ═══════════════════════════════════════════════
+   Canvas rendering
+═══════════════════════════════════════════════ */
+function renderMap() {
+  const canvas = document.getElementById('map-canvas');
+  const wrap   = document.getElementById('map-wrap');
+  const palette = PALETTES[currentStyle];
+
+  // Size canvas to map data
+  canvas.width  = mapSize;
+  canvas.height = mapSize;
+
+  // CSS size: fill wrap width, maintain aspect
+  const displayW = wrap.clientWidth;
+  canvas.style.width  = displayW + 'px';
+  canvas.style.height = displayW + 'px';
+
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(mapSize, mapSize);
+  const d   = img.data;
+
+  for (let y = 0; y < mapSize; y++) {
+    for (let x = 0; x < mapSize; x++) {
+      const hv = heightMap[y * mapSize + x];
+      const biome = getBiomeAt(hv, palette);
+      // Subtle shading by elevation within biome
+      const shade = 0.85 + hv * 0.15;
+      const idx = (y * mapSize + x) * 4;
+      d[idx]   = Math.min(255, biome.rgb[0] * shade);
+      d[idx+1] = Math.min(255, biome.rgb[1] * shade);
+      d[idx+2] = Math.min(255, biome.rgb[2] * shade);
+      d[idx+3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+
+  // Apply zoom transform
+  canvas.style.transformOrigin = `${(playerX/mapSize)*100}% ${(playerY/mapSize)*100}%`;
+  canvas.style.transform = `scale(${zoomLevel})`;
+
+  updatePlayerMarker();
+  updateStats();
+}
+
+function updatePlayerMarker() {
+  const svg = document.getElementById('player-overlay');
+  const px = (playerX / mapSize) * 100;
+  const py = (playerY / mapSize) * 100;
+
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.innerHTML = `
+    <circle cx="${px}" cy="${py}" r="1.2" fill="#ff4444" opacity="0.9"/>
+    <circle cx="${px}" cy="${py}" r="2.2" fill="none" stroke="#ff4444" stroke-width="0.4" opacity="0.6"/>
+    <line x1="${px}" y1="${py-3}" x2="${px}" y2="${py-1.5}" stroke="#ff4444" stroke-width="0.3" opacity="0.5"/>
+    <line x1="${px}" y1="${py+1.5}" x2="${px}" y2="${py+3}" stroke="#ff4444" stroke-width="0.3" opacity="0.5"/>
+    <line x1="${px-3}" y1="${py}" x2="${px-1.5}" y2="${py}" stroke="#ff4444" stroke-width="0.3" opacity="0.5"/>
+    <line x1="${px+1.5}" y1="${py}" x2="${px+3}" y2="${py}" stroke="#ff4444" stroke-width="0.3" opacity="0.5"/>
+  `;
+}
+
+function updateStats() {
+  const palette = PALETTES[currentStyle];
+  const hv = heightMap ? heightMap[playerY * mapSize + playerX] : 0;
+  const biome = heightMap ? getBiomeAt(hv, palette) : {name:'—'};
+  document.getElementById('stat-seed').textContent = currentSeed;
+  document.getElementById('stat-pos').textContent  = `${playerX}, ${playerY}`;
+  document.getElementById('stat-biome').textContent = biome.name;
+  document.getElementById('stat-elev').textContent = hv.toFixed(3);
+  document.getElementById('stat-zoom').textContent = Math.round(zoomLevel * 100) + '%';
+}
+
+/* ═══════════════════════════════════════════════
+   Generate
+═══════════════════════════════════════════════ */
+function generate(seed, size, scale, style) {
+  const loading = document.getElementById('loading');
+  loading.classList.add('show');
+
+  // Defer to allow DOM paint
+  setTimeout(() => {
+    currentSeed  = seed;
+    mapSize      = size;
+    currentScale = scale;
+    currentStyle = style;
+    playerX = Math.floor(size / 2);
+    playerY = Math.floor(size / 2);
+    zoomLevel = 1.0;
+
+    heightMap = generateHeightMap(size, seed, scale);
+    renderMap();
+    loading.classList.remove('show');
+  }, 30);
+}
+
+/* ═══════════════════════════════════════════════
+   Event listeners
+═══════════════════════════════════════════════ */
+document.getElementById('generate-btn').addEventListener('click', () => {
+  const seed  = parseInt(document.getElementById('seed-input').value) || 0;
+  const size  = parseInt(document.getElementById('size-select').value);
+  const scale = parseFloat(document.getElementById('scale-select').value);
+  const style = document.getElementById('style-select').value;
+  generate(seed, size, scale, style);
+});
+
+document.getElementById('random-btn').addEventListener('click', () => {
+  const seed  = Math.floor(Math.random() * 9999999);
+  const size  = parseInt(document.getElementById('size-select').value);
+  const scale = parseFloat(document.getElementById('scale-select').value);
+  const style = document.getElementById('style-select').value;
+  document.getElementById('seed-input').value = seed;
+  generate(seed, size, scale, style);
+});
+
+// Keyboard movement
+document.addEventListener('keydown', (e) => {
+  if (!heightMap) return;
+  const key = e.key.toLowerCase();
+  let moved = false;
+  switch(key) {
+    case 'arrowup':    case 'w': if (playerY > 0)           { playerY--; moved=true; } e.preventDefault(); break;
+    case 'arrowdown':  case 's': if (playerY < mapSize-1)   { playerY++; moved=true; } e.preventDefault(); break;
+    case 'arrowleft':  case 'a': if (playerX > 0)           { playerX--; moved=true; } e.preventDefault(); break;
+    case 'arrowright': case 'd': if (playerX < mapSize-1)   { playerX++; moved=true; } e.preventDefault(); break;
+  }
+  if (moved) { updatePlayerMarker(); updateStats(); }
+});
+
+// Click to teleport
+document.getElementById('map-canvas').addEventListener('click', (e) => {
+  const rect = e.target.getBoundingClientRect();
+  const rx = (e.clientX - rect.left) / rect.width;
+  const ry = (e.clientY - rect.top) / rect.height;
+  playerX = Math.max(0, Math.min(mapSize-1, Math.floor(rx * mapSize)));
+  playerY = Math.max(0, Math.min(mapSize-1, Math.floor(ry * mapSize)));
+  updatePlayerMarker();
+  updateStats();
+});
+
+// Scroll zoom
+document.getElementById('map-wrap').addEventListener('wheel', (e) => {
+  e.preventDefault();
+  zoomLevel *= e.deltaY < 0 ? 1.1 : 0.9;
+  zoomLevel = Math.max(0.5, Math.min(5, zoomLevel));
+  renderMap();
+}, { passive: false });
+
+// Handle window resize
+window.addEventListener('resize', () => {
+  if (!heightMap) return;
+  const canvas  = document.getElementById('map-canvas');
+  const wrap    = document.getElementById('map-wrap');
+  const displayW = wrap.clientWidth;
+  canvas.style.width  = displayW + 'px';
+  canvas.style.height = displayW + 'px';
+});
+
+// Initial generation on load
+window.addEventListener('DOMContentLoaded', () => {
+  generate(42, 200, 0.08, 'terrain');
+});
+</script>
+</body>
+</html>
